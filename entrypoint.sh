@@ -1,31 +1,30 @@
 #!/bin/bash
-set -e
 
-# Функція для коректної зупинки
-shutdown() {
-    echo "Shutting down CUPS and ccpd..."
-    /etc/init.d/ccpd stop
-    kill -TERM $(cat /var/run/cups/cupsd.pid)
-    wait
-}
+# Видаляємо старий PID файл CUPS, якщо він залишився від попереднього збою
+rm -f /var/run/cups/cupsd.pid
 
-echo "Starting udev daemon..."
-/usr/lib/systemd/systemd-udevd &
+# 1. Запускаємо службу CUPS у фоновому режимі
+echo "Starting CUPS daemon in background..."
+/usr/sbin/cupsd -f &
 
+# 2. Запускаємо службу драйвера Canon
 echo "Starting Canon ccpd daemon..."
 /etc/init.d/ccpd start
 
-echo "Starting CUPS daemon..."
-/usr/sbin/cupsd -f &
+# 3. Даємо службам секунду на ініціалізацію
+echo "Waiting for services to initialize..."
+sleep 3
 
-CUPS_PID=$!
-trap "shutdown" SIGTERM SIGINT
+# 4. Створюємо чергу друку в CUPS (тепер cupsd точно працює)
+echo "Registering printer queue with CUPS..."
+lpadmin -p LBP6000 -m CNCUPSLBP6018CAPTK.ppd -v ccp://localhost:59687 -E
 
-# Створюємо чергу друку один раз (якщо її немає)
-if ! lpstat -p LBP6000 &>/dev/null; then
-  echo "Printer queue 'LBP6000' not found. Creating..."
-  lpadmin -p LBP6000 -m CNCUPSLBP6018CAPTK.ppd -v ccp://localhost:59687 -E
-fi
+# 5. Реєструємо фізичний пристрій в драйвері
+echo "Registering physical device with ccpd..."
+# Шлях до пристрою береться зі змінної, яку ми передаємо в контейнер
+ccpdadmin -p LBP6000 -o ${DEVICE_PATH}
 
-echo "Services started. Waiting for printer connection via udev..."
-wait ${CUPS_PID}
+echo "Setup complete. Tailing CUPS error log for monitoring."
+echo "You can now send print jobs."
+# Залишаємо контейнер працювати і виводимо логи CUPS для спостереження
+tail -f /var/log/cups/error_log

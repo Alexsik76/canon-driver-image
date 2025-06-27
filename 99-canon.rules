@@ -1,2 +1,2 @@
-SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04a9", ATTRS{idProduct}=="04a9", RUN+="/usr/sbin/ccpdadmin -p LBP6000 -o /dev/bus/usb/001/003"
+SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04a9", ATTRS{idProduct}=="04a9", RUN+="/usr/sbin/ccpdadmin -p LBP6000 -o ${DEVICE_PATH}"
 SUBSYSTEM=="usb", ACTION=="remove", ATTRS{idVendor}=="04a9", ATTRS{idProduct}=="04a9", RUN+="/usr/sbin/ccpdadmin -x LBP6000"
