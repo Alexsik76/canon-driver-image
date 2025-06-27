@@ -1,12 +1,12 @@
+# cups-container/Dockerfile
 FROM fedora:40
 
-# Встановлення CUPS та необхідних залежностей
+# Install CUPS and necessary dependencies
 RUN dnf update -y && \
     dnf install -y cups ghostscript libjpeg-turbo.i686 libgcrypt.i686 gtk3.i686 jbigkit-libs.i686 glibc.i686 libstdc++.i686 popt.i686 && \
     dnf clean all
 
-# Конфігурація CUPS
-# Дозволити віддалений доступ (для зв'язку з ccpd та з мережі)
+# Configuration of CUPS for remote access
 RUN sed -i 's/Listen localhost:631/Port 631/' /etc/cups/cupsd.conf && \
     echo 'Listen 0.0.0.0:631' >> /etc/cups/cupsd.conf && \
     echo '<Location />' >> /etc/cups/cupsd.conf && \
@@ -24,12 +24,20 @@ RUN sed -i 's/Listen localhost:631/Port 631/' /etc/cups/cupsd.conf && \
     echo '  Allow all' >> /etc/cups/cupsd.conf && \
     echo '</Location>' >> /etc/cups/cupsd.conf
 
-# Створення символічного посилання для PPD файлу (його буде додано окремо)
-# Це шлях, де CUPS шукатиме PPD файли
+# Create directory for Canon PPD files
 RUN mkdir -p /usr/share/cups/model/canon
-RUN lpadmin -p LBP6000 -m CNCUPSLBP6018CAPTK.ppd -v ccp://ccpd:59687 -E
-# Відкриття порту CUPS
+
+# Important: If CNCUPSLBP6018CAPTK.ppd is NOT installed by a package in this image,
+# you must copy it here from your host.
+# Assuming you have it in cups-container directory, then:
+COPY CNCUPSLBP6018CAPTK.ppd /usr/share/cups/model/canon/
+
+# Copy the CUPS entrypoint script
+COPY cups-entrypoint.sh /usr/local/bin/cups-entrypoint.sh
+RUN chmod +x /usr/local/bin/cups-entrypoint.sh
+
+# Expose the CUPS port
 EXPOSE 631
 
-# Виконавчий файл CUPS
-CMD ["/usr/sbin/cupsd", "-f"]
+# Set the entrypoint script to run when the container starts
+CMD ["/usr/local/bin/cups-entrypoint.sh"]
