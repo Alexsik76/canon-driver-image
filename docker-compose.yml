@@ -12,7 +12,7 @@ services:
       - cups_logs:/var/log/cups # Для логів CUPS
       - cups_spool:/var/spool/cups # Для черги друку
     privileged: true # Може знадобитися для повного доступу CUPS до системи. Розгляньте використання capabilities замість цього.
-    environment:
+    #environment:
       # Можливо, знадобиться встановити користувача/групу, під якими працює cupsd
       # (хоча зазвичай він запускається від user "lp" або "root")
 
