@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Ця функція коректно зупиняє служби при отриманні сигналу від Docker
+# Функція для коректної зупинки
 shutdown() {
     echo "Shutting down CUPS and ccpd..."
     /etc/init.d/ccpd stop
@@ -9,17 +9,23 @@ shutdown() {
     wait
 }
 
+echo "Starting udev daemon..."
+/usr/lib/systemd/systemd-udevd &
+
 echo "Starting Canon ccpd daemon..."
 /etc/init.d/ccpd start
 
 echo "Starting CUPS daemon..."
 /usr/sbin/cupsd -f &
 
-# Отримуємо PID щойно запущеного у фоні CUPS
 CUPS_PID=$!
-
-# Перехоплюємо сигнали зупинки від Docker (SIGTERM) і викликаємо нашу функцію
 trap "shutdown" SIGTERM SIGINT
 
-# Чекаємо, доки процес CUPS не завершиться
+# Створюємо чергу друку один раз (якщо її немає)
+if ! lpstat -p LBP6000 &>/dev/null; then
+  echo "Printer queue 'LBP6000' not found. Creating..."
+  lpadmin -p LBP6000 -m CNCUPSLBP6018CAPTK.ppd -v ccp://localhost:59687 -E
+fi
+
+echo "Services started. Waiting for printer connection via udev..."
 wait ${CUPS_PID}

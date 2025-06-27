@@ -15,6 +15,7 @@ RUN dnf update -y && \
     dnf clean all
 
 COPY cupsd.conf /etc/cups/
+COPY 99-canon.rules /etc/udev/rules.d/
 
 
 COPY driver-files/ /tmp/driver-files/
