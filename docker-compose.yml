@@ -8,4 +8,4 @@ services:
     security_opt:
       - "label=disable"
     devices:
-      - "${PRINTER_DEVICE_PATH}:${PRINTER_DEVICE_PATH}"
+      - ":"
