@@ -1,0 +1,12 @@
+services:
+  canon-printer:
+    build: .
+    container_name: canon-printer
+    restart: always
+    ports:
+      - "631:631"
+    privileged: true
+    environment:
+      - DEVICE_PATH=${DEVICE_PATH}
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"

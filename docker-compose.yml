@@ -1,12 +1,48 @@
+version: '3.8'
+
 services:
-  canon-printer:
-    build: .
-    container_name: canon-printer
-    restart: always
+  cups:
+    build: ./cups-container
+    container_name: cups-server
+    restart: unless-stopped
     ports:
-      - "631:631"
-    privileged: true
+      - "631:631" # Доступ до CUPS з хоста та мережі
+    volumes:
+      - cups_config:/etc/cups # Для збереження конфігурації CUPS
+      - cups_logs:/var/log/cups # Для логів CUPS
+      - cups_spool:/var/spool/cups # Для черги друку
+    privileged: true # Може знадобитися для повного доступу CUPS до системи. Розгляньте використання capabilities замість цього.
     environment:
-      - DEVICE_PATH=${DEVICE_PATH}
+      # Можливо, знадобиться встановити користувача/групу, під якими працює cupsd
+      # (хоча зазвичай він запускається від user "lp" або "root")
+
+  ccpd:
+    build: ./ccpd-container
+    container_name: ccpd-daemon
+    restart: unless-stopped
+    depends_on:
+      - cups # Забезпечує, що cups запуститься першим
     devices:
-      - "/dev/bus/usb:/dev/bus/usb"
+      # Прокидаємо USB-пристрій принтера.
+      # Замініть /dev/bus/usb/001/005 на шлях до вашого принтера з lsusb
+      # Або, якщо це конкретний пристрій, як /dev/usb/lp0, використовуйте його.
+      # Найкраще прокидати по VendorID:ProductID або вказувати шлях до lp0.
+      # Зверніть увагу: це приклад, вам потрібно знайти актуальний шлях на хості
+      # ls -l /dev/usb/lp0
+      - "/dev/usb/lp0:/dev/usb/lp0" # Якщо /dev/usb/lp0 доступний на хості
+      # Якщо принтер підключається як загальний USB-пристрій:
+      # - "/dev/bus/usb/001/005:/dev/bus/usb/001/005" # Приклад для Bus 001 Device 005
+      # Або прокиньте всю USB-шину, якщо є проблеми (менш безпечно):
+      # - "/dev/bus/usb:/dev/bus/usb"
+    privileged: true # Часто необхідно для пропрієтарних драйверів, що працюють з пристроями.
+    environment:
+      # Тут ми вказуємо ccpd, як знайти CUPS.
+      # 'cups' - це ім'я сервісу з docker-compose.yml, яке резолвиться в IP контейнера CUPS
+      - CUPS_SERVER=cups:631
+    # Для налагодження, якщо ccpdadmin не працює коректно, можна зайти в контейнер:
+    # command: bash # і вручну виконати команди.
+
+volumes:
+  cups_config:
+  cups_logs:
+  cups_spool:
