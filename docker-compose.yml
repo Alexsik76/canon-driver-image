@@ -5,9 +5,8 @@ services:
     restart: always
     ports:
       - "631:631"
-    security_opt:
-      - "label=disable"
+    privileged: true
     environment:
       - DEVICE_PATH=${DEVICE_PATH}
     devices:
-      - "${DEVICE_PATH}:${DEVICE_PATH}"
+      - "/dev/bus/usb:/dev/bus/usb"

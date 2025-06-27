@@ -7,12 +7,14 @@ LABEL description="Fedora 40 with Canon CAPT v2.71 driver (LBP6000) and CUPS."
 RUN dnf update -y && \
     dnf install -y \
     cups \
-    udev \
+    ghostscript \
+    libjpeg-turbo.i686 \
+    libgcrypt.i686 \
+    gtk3.i686 \
+    jbigkit-libs.i686 \
     glibc.i686 \
     libstdc++.i686 \
-    libgcc.i686 \
     popt.i686 \
-    libxml2.i686 \
     psmisc && \
     dnf clean all
 
