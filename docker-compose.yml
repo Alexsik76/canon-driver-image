@@ -7,5 +7,7 @@ services:
       - "631:631"
     security_opt:
       - "label=disable"
+    environment:
+      - DEVICE_PATH=${DEVICE_PATH}
     devices:
       - "${DEVICE_PATH}:${DEVICE_PATH}"
