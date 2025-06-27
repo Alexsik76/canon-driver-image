@@ -1,0 +1,11 @@
+services:
+  canon-printer:
+    build: .
+    container_name: canon-printer
+    restart: always
+    ports:
+      - "631:631"
+    security_opt:
+      - "label=disable"
+    devices:
+      - "${PRINTER_DEVICE_PATH}:${PRINTER_DEVICE_PATH}"
